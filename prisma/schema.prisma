@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  projectsLed Project[]       @relation("ProjectLead")
+  id          String          @id @default(cuid())
+  username    String          @unique
+  displayName String?
+  bio         String?
+  role        Role            @default(FIGURE)
+  createdAt   DateTime        @default(now())
+  submissions Submission[]
+  projects    ProjectMember[]
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  title         String
+  content       String?
+  fileUrl       String?
+  tags          String[]
+  aiNote        String?
+  category      String?
+  upvotes       Int      @default(0)
+  allowComments Boolean  @default(true)
+  visibility    String   @default("public")
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  isPublic    Boolean         @default(true)
+  maxMembers  Int             @default(20)
+  leadId      String
+  lead        User            @relation("ProjectLead", fields: [leadId], references: [id])
+  members     ProjectMember[]
+  updates     ProjectUpdate[]
+}
+
+model ProjectMember {
+  id        String      @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole
+  project   Project     @relation(fields: [projectId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+}
+
+model ProjectUpdate {
+  id        String   @id @default(cuid())
+  projectId String
+  content   String
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id])
+}
+
+model View {
+  id           String   @id @default(cuid())
+  userId       String?          // null = anonymous view (until auth)
+  submissionId String
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([submissionId, createdAt])
+}
+
+model TagPref {
+  id      String  @id @default(cuid())
+  userId  String
+  tag     String          // e.g. "number-theory" or "cat:unbounded-space"
+  weight  Int     @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, tag])
+}
+
+enum Role {
+  FIGURE
+  CONTRIBUTOR
+  LAB_LEAD
+  PUBLISHED
+  MOD
+  FOUNDER
+}
+
+enum ProjectRole {
+  LEAD
+  MEMBER
+}
