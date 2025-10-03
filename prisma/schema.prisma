@@ -9,14 +9,17 @@ datasource db {
 
 model User {
   projectsLed Project[]       @relation("ProjectLead")
-  id          String          @id @default(cuid())
-  username    String          @unique
+  id          String   @id @default(cuid())
+  username    String   @unique
   displayName String?
   bio         String?
-  role        Role            @default(FIGURE)
-  createdAt   DateTime        @default(now())
+  role        Role     @default(FIGURE)
+  createdAt   DateTime @default(now())
   submissions Submission[]
   projects    ProjectMember[]
+
+  // NEW: link to Supabase auth.users.id (UUID)
+  authId      String?  @unique
 }
 
 model Submission {
