@@ -11,14 +11,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  // Check if a local User row exists
-  const found = await prisma.User.findUnique({ where: { authId: user.id } });
-  if (found) return res.status(200).json(found);
+  // ✅ Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { authId: user.id },
+  });
 
-  // Create a default username from Supabase UID
+  if (existingUser) {
+    return res.status(200).json(existingUser);
+  }
+
+  // ✅ Otherwise, create new user
   const defaultUsername = `figure_${user.id.slice(0, 8)}`;
 
-  const created = await prisma.User.create({
+  const created = await prisma.user.create({
     data: {
       authId: user.id,
       username: defaultUsername,
