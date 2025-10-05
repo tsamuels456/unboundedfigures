@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";  // make sure this import is at the top
+import { useSession } from '@supabase/auth-helpers-react';
+import Link from 'next/link';
 
 export default function SubmitPage() {
   const router = useRouter();
@@ -12,6 +14,31 @@ export default function SubmitPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const session = useSession();
+
+  if (!session) {
+  return (
+    <main className="max-w-xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Submit your work</h1>
+      <p className="mt-2">You must be signed in to submit.</p>
+      <div className="mt-4 flex gap-4">
+        <Link className="underline" href="/auth/signin?redirect=/submit">
+          Sign in
+        </Link>
+        <Link className="underline" href="/auth/signup?redirect=/submit">
+          Create account
+        </Link>
+      </div>
+    </main>
+  );
+}
+return (
+    <main className="max-w-xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Submit your work</h1>
+      {/* your form inputs and submit logic here */}
+    </main>
+  );
+
 
 
   const canSubmit = title.trim().length >= 3 && (content.trim().length > 0 || !!file);
