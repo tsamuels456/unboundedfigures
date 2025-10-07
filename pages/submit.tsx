@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";  // make sure this import is at the top
 import { useSession } from '@supabase/auth-helpers-react';
 import Link from 'next/link';
+import { GetServerSidePropsContext } from 'next';
+import { getServerSupabaseClient } from '@/lib/supabaseServer';
 
 export default function SubmitPage() {
   const router = useRouter();
@@ -187,4 +189,19 @@ if (file) {
       </form>
     </main>
   );
+}
+export async function getServerSideProps(ctx: GetServerSidePropsContext) {
+  const supabase = getServerSupabaseClient(ctx);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: `/auth/signin?redirect=/submit`,
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: {} };
 }
