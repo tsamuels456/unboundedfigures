@@ -18,6 +18,8 @@ export default function Navbar() {
           <>
             <Link href="/auth/signin">Sign in</Link>
             <Link href="/auth/signup">Sign up</Link>
+            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/profile">Profile</Link>
           </>
         )}
       </div>
