@@ -1,3 +1,4 @@
+// components/Navbar.tsx
 import Link from "next/link";
 import { useSupabaseClient, useSession } from "@supabase/auth-helpers-react";
 
@@ -11,19 +12,23 @@ export default function Navbar() {
         <Link href="/">Home</Link>
         <Link href="/submit">Submit</Link>
       </div>
+
       <div className="flex gap-3">
         {session ? (
-          <button onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <>
+            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/profile">Profile</Link>
+            <button onClick={() => supabase.auth.signOut()}>Sign out</button>
+          </>
         ) : (
           <>
             <Link href="/auth/signin">Sign in</Link>
             <Link href="/auth/signup">Sign up</Link>
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/profile">Profile</Link>
           </>
         )}
       </div>
     </nav>
   );
 }
+
 
