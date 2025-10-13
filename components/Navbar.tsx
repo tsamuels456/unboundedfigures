@@ -18,7 +18,14 @@ export default function Navbar() {
           <>
             <Link href="/dashboard">Dashboard</Link>
             <Link href="/profile">Profile</Link>
-            <button onClick={() => supabase.auth.signOut()}>Sign out</button>
+            <button
+  type="button"
+  onClick={() => supabase.auth.signOut()}
+  className="cursor-pointer text-blue-600 hover:underline"
+>
+  Sign out
+</button>
+
           </>
         ) : (
           <>
