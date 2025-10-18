@@ -17,6 +17,8 @@ model User {
   createdAt   DateTime @default(now())
   submissions Submission[]
   projects    ProjectMember[]
+  comments     Comment[]
+
 
   // NEW: link to Supabase auth.users.id (UUID)
   authId      String?  @unique
@@ -36,6 +38,8 @@ model Submission {
   authorId      String
   author        User     @relation(fields: [authorId], references: [id])
   createdAt     DateTime @default(now())
+  comments     Comment[]
+
 }
 
 model Project {
@@ -85,6 +89,18 @@ model TagPref {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, tag])
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  content     String
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  submission  Submission @relation(fields: [submissionId], references: [id])
+  submissionId String
 }
 
 enum Role {
