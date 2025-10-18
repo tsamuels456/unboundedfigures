@@ -121,5 +121,15 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
     take: 20,
   });
 
-  return { props: { user, submissions } };
+  // 🧠 Convert Dates → Strings
+  return {
+    props: {
+      user: { ...user, createdAt: user.createdAt.toISOString() },
+      submissions: submissions.map((s) => ({
+        ...s,
+        createdAt: s.createdAt.toISOString(),
+      })),
+    },
+  };
 }
+
