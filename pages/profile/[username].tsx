@@ -1,6 +1,7 @@
 // pages/profile/[username].tsx
 import { GetServerSidePropsContext } from "next";
 import { prisma } from "@/lib/prisma";
+import { useSession } from "@supabase/auth-helpers-react";
 
 type PageProps = {
   user: {
@@ -18,6 +19,8 @@ type PageProps = {
 };
 
 export default function ProfilePage({ user, submissions }: PageProps) {
+    const session = useSession();
+
   if (!user) {
     return (
       <main className="max-w-3xl mx-auto p-6">
@@ -30,6 +33,58 @@ export default function ProfilePage({ user, submissions }: PageProps) {
   return (
     <main className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold">@{user.username}</h1>
+          {session?.user?.id === user.id && (
+
+          <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const displayName = form.displayName.value;
+        const bio = form.bio.value;
+
+        const res = await fetch("/api/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName, bio }),
+        });
+
+        if (res.ok) {
+          alert("Profile updated!");
+          location.reload();
+        } else {
+          const err = await res.json();
+          alert(err.error || "Failed to update profile");
+        }
+      }}
+      className="mt-6 space-y-4 border-t border-gray-200 pt-4"
+    >
+      <div>
+        <label className="block text-sm font-medium">Display Name</label>
+        <input
+          name="displayName"
+          defaultValue={user.displayName ?? ""}
+          className="border w-full p-2 rounded"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">Bio</label>
+        <textarea
+          name="bio"
+          defaultValue={user.bio ?? ""}
+          rows={3}
+          className="border w-full p-2 rounded"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+      >
+        Save Changes
+      </button>
+    </form>
+    )}
       <p className="text-gray-600">{user.displayName || "Unnamed figure"}</p>
       {user.bio && <p className="mt-2">{user.bio}</p>}
 
