@@ -7,16 +7,24 @@ type Props = {
   submission: {
     id: string;
     title: string;
-    content: string | null;
-    fileUrl: string | null;   // 👈 add this line
+    content: string | null;   // keep your existing fields
+    fileUrl: string | null;
     createdAt: string;
     category: string | null;
     author: { username: string | null; displayName: string | null } | null;
   } | null;
+
+  comments: Array<{
+    id: string;
+    content: string;
+    createdAt: string; // Date will be serialized to string
+    author: { id: string; username: string | null; displayName: string | null } | null;
+  }>;
 };
 
 
-export default function SubmissionPage({ submission }: Props) {
+
+export default function SubmissionPage({ submission, comments }: Props) {
   useEffect(() => {
   if (!submission?.id) return;
 
@@ -66,6 +74,23 @@ export default function SubmissionPage({ submission }: Props) {
           Download attached file
         </a>
           ) : null}
+          <section className="mt-10">
+  <h3 className="text-xl font-semibold mb-3">Comments</h3>
+  {comments.length === 0 && <p className="text-gray-500">No comments yet.</p>}
+
+  <ul className="space-y-4">
+    {comments.map((c) => (
+      <li key={c.id} className="border-t pt-3">
+        <p className="whitespace-pre-wrap">{c.content}</p>
+        <p className="text-sm text-gray-500 mt-1">
+          by {c.author?.displayName || c.author?.username || "Unknown"} •{" "}
+          {new Date(c.createdAt).toLocaleString()}
+        </p>
+      </li>
+    ))}
+  </ul>
+</section>
+
     </main>
   );
 }
@@ -79,12 +104,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       author: { select: { username: true, displayName: true } },
     },
   });
-
-  return {
-    props: {
-      submission: submission
-        ? JSON.parse(JSON.stringify(submission)) // safe serialization
-        : null,
-    },
-  };
+  // Get comments for this submission
+const comments = await prisma.comment.findMany({
+  where: { submissionId: id },
+  orderBy: { createdAt: "asc" },
+  include: {
+    author: {
+      select: { id: true, username: true, displayName: true }
+    }
+  }
+});
+return { props: { submission, comments } };
+  
 };
