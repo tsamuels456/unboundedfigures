@@ -92,16 +92,19 @@ model TagPref {
 }
 
 model Comment {
-  id          String   @id @default(cuid())
-  content     String
-  createdAt   DateTime @default(now())
+  id           String      @id @default(cuid())
+  content      String
+  createdAt    DateTime    @default(now())
 
-  // Relationships
-  author      User      @relation(fields: [authorId], references: [id])
-  authorId    String
-  submission  Submission @relation(fields: [submissionId], references: [id])
+  // Foreign keys
+  authorId     String
   submissionId String
+
+  // Relations
+  author       User        @relation(fields: [authorId], references: [id])
+  submission   Submission  @relation(fields: [submissionId], references: [id])
 }
+
 
 enum Role {
   FIGURE
