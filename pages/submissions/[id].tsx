@@ -90,6 +90,51 @@ export default function SubmissionPage({ submission, comments }: Props) {
     ))}
   </ul>
 </section>
+{/* Comment Form */}
+<section className="mt-8 border-t pt-6">
+  <h4 className="text-lg font-semibold mb-2">Leave a Comment</h4>
+
+  <form
+    onSubmit={async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const input = form.elements.namedItem("content") as HTMLTextAreaElement;
+      const content = input.value.trim();
+      if (!content) return;
+
+      // Call API
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          content,
+        }),
+      });
+
+      if (res.ok) {
+        input.value = ""; // clear after post
+        window.location.reload(); // quick refresh to show new comment
+      } else {
+        alert("Failed to post comment");
+      }
+    }}
+  >
+    <textarea
+      name="content"
+      placeholder="Write your comment here..."
+      className="w-full border rounded p-2 text-sm"
+      rows={3}
+      required
+    />
+    <button
+      type="submit"
+      className="mt-2 bg-black text-white px-3 py-1.5 rounded hover:bg-gray-800"
+    >
+      Post Comment
+    </button>
+  </form>
+</section>
 
     </main>
   );
