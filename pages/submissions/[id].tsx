@@ -159,6 +159,18 @@ const comments = await prisma.comment.findMany({
     }
   }
 });
-return { props: { submission, comments } };
+return {
+  props: {
+    submission: {
+      ...submission,
+      createdAt: submission?.createdAt?.toISOString() ?? null,
+    },
+    comments: comments.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+    })),
+  },
+};
+
   
 };
