@@ -1,11 +1,9 @@
 // pages/submit.tsx
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { supabase } from "@/lib/supabaseClient";  // make sure this import is at the top
-import { useSession } from '@supabase/auth-helpers-react';
-import Link from 'next/link';
-import { GetServerSidePropsContext } from 'next';
-import { getServerSupabaseClient } from '@/lib/supabaseServer';
+import { supabase } from "@/lib/supabaseClient";
+import { useSession } from "@supabase/auth-helpers-react";
+import Link from "next/link";
 
 export default function SubmitPage() {
   const router = useRouter();
@@ -18,32 +16,7 @@ export default function SubmitPage() {
   const [file, setFile] = useState<File | null>(null);
   const session = useSession();
 
-  if (!session) {
-  return (
-    <main className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Submit your work</h1>
-      <p className="mt-2">You must be signed in to submit.</p>
-      <div className="mt-4 flex gap-4">
-        <Link className="underline" href="/auth/signin?redirect=/submit">
-          Sign in
-        </Link>
-        <Link className="underline" href="/auth/signup?redirect=/submit">
-          Create account
-        </Link>
-      </div>
-    </main>
-  );
-}
-return (
-    <main className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Submit your work</h1>
-      {/* your form inputs and submit logic here */}
-    </main>
-  );
-
-
-
-  const canSubmit = title.trim().length >= 3 && (content.trim().length > 0 || !!file);
+  const canSubmit = title.trim().length >= 3 && (content.trim().length > 0 || file);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,157 +24,115 @@ return (
 
     setLoading(true);
     setError(null);
-let fileUrl: string | undefined;
 
-if (file) {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-  const path = `submissions/${Date.now()}_${Math.random()
-    .toString(36)
-    .slice(2)}.${ext}`;
+    let fileUrl: string | undefined;
 
-  const { error: uploadError } = await supabase
-    .storage
-    .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET!)
-    .upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+    if (file) {
+      const ext = file.name.split(".").pop();
+      const path = `submissions/${Date.now()}.${ext}`;
+      const { data, error: uploadError } = await supabase.storage
+        .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET!)
+        .upload(path, file);
 
-  if (uploadError) {
-    setLoading(false);
-    setError(`Upload failed: ${uploadError.message}`);
-    return;
-  }
+      if (uploadError) {
+        setError("File upload failed");
+        setLoading(false);
+        return;
+      }
 
-  // get the public URL for the uploaded file
-  const { data: pub } = supabase
-    .storage
-    .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET!)
-    .getPublicUrl(path);
+      const { data: pub } = supabase.storage
+        .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET!)
+        .getPublicUrl(path);
 
-  fileUrl = pub.publicUrl;
-}
+      fileUrl = pub.publicUrl;
+    }
+
     const res = await fetch("/api/submissions", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    title,
-    content: content || undefined,
-    category,
-    visibility: "PUBLIC",
-    allowComments: true,
-    aiNote: aiNote || undefined,
-    fileUrl,  // 👈 add this here
-  }),
-});
-
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        content,
+        aiNote,
+        category,
+        visibility: "PUBLIC",
+        allowComments: true,
+        authorId: session?.user?.id ?? "cmeem1gzu0000vz6c3om1qumn",
+        fileUrl,
+      }),
+    });
 
     const data = await res.json();
     setLoading(false);
 
-    if (!res.ok) {
-      setError(data?.error ?? "Failed to submit");
-      return;
+    if (res.ok) {
+      router.push(`/submissions/${data.id}`);
+    } else {
+      setError(data.error ?? "Failed to submit");
     }
-
-    // Go to the new submission page
-    router.push(`/submissions/${data.id}`);
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold">Submit work</h1>
-      <p className="text-gray-600 text-sm mt-1">
-        Share an idea, sketch, proof, or pattern. Be bold and respectful.
-      </p>
+    <main className="max-w-2xl mx-auto px-4 py-10">
+      <h1 className="text-2xl font-bold mb-6 text-center">Submit your work</h1>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Title</label>
+      {/* If not signed in, show sign-in message */}
+      {!session ? (
+        <div className="text-center">
+          <p className="mb-4">You must be signed in to submit.</p>
+          <Link href="/auth/signin?redirect=/submit" className="underline">
+            Sign in
+          </Link>
+          <span className="mx-2">or</span>
+          <Link href="/auth/signup?redirect=/submit" className="underline">
+            Create account
+          </Link>
+        </div>
+      ) : (
+        // Otherwise show the submission form
+        <form onSubmit={onSubmit}>
+          <label className="block text-sm font-medium mb-1">Title</label>
           <input
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-2 mb-3"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="A clear, friendly title"
+            required
           />
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium">Category</label>
-          <select
-            className="w-full border rounded p-2"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="unbounded-space">Unbounded Space</option>
-            <option value="library-of-figures">Library of Figures</option>
-            <option value="unsolved-problems">Unsolved Problems</option>
-            <option value="millennium-problems">Millennium Problems</option>
-            <option value="project-lab">Project Lab</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Content</label>
+          <label className="block text-sm font-medium mb-1">Content</label>
           <textarea
-            className="w-full border rounded p-2 h-48 whitespace-pre-wrap"
+            className="w-full border rounded p-2 mb-3"
+            rows={4}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Write your idea, conjecture, sketch, etc. LaTeX support coming soon."
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Tip: You can paste plain text or LaTeX; we’ll add rendering later.
-          </p>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium">AI Note (optional)</label>
+          <label className="block text-sm font-medium mb-1">AI Note (optional)</label>
           <input
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-2 mb-3"
             value={aiNote}
             onChange={(e) => setAiNote(e.target.value)}
-            placeholder='e.g., "Drafted by me; formatting with AI."'
           />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium">Upload (PDF/DOC/DOCX)</label>
+
+          <label className="block text-sm font-medium mb-1">Upload File (optional)</label>
           <input
             type="file"
             accept=".pdf,.doc,.docx"
+            className="w-full mb-3"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full border rounded p-2"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Optional. If you upload a file, content is optional.
-          </p>
-        </div>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={!canSubmit || loading}
-          className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-        >
-          {loading ? "Submitting…" : "Submit"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={!canSubmit || loading}
+            className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+          >
+            {loading ? "Submitting..." : "Submit"}
+          </button>
+        </form>
+      )}
     </main>
   );
-}
-export async function getServerSideProps(ctx: GetServerSidePropsContext) {
-  const supabase = getServerSupabaseClient(ctx);
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      redirect: {
-        destination: `/auth/signin?redirect=/submit`,
-        permanent: false,
-      },
-    };
-  }
-
-  return { props: {} };
 }
