@@ -1,115 +1,116 @@
 // pages/profile.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useRouter } from "next/router";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const session = useSession();
-  const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  // Redirect if not logged in
-  if (!session) {
-    return (
-      <main className="max-w-xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Profile</h1>
-        <p className="mt-2">You must be signed in to view your profile.</p>
-        <a className="underline" href="/auth/signin?redirect=/profile">
-          Sign in
-        </a>
-      </main>
-    );
-  }
+  useEffect(() => {
+    if (!session) return;
+    loadProfile();
+  }, [session]);
 
   async function loadProfile() {
-    const res = await fetch("/api/profile/me");
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/profile/me");
+      const data = await res.json();
 
-    if (res.ok && data.profile) {
-      setUsername(data.profile.username ?? "");
-      setDisplayName(data.profile.displayName ?? "");
-      setBio(data.profile.bio ?? "");
+      if (data?.profile) {
+        setDisplayName(data.profile.displayName || "");
+        setBio(data.profile.bio || "");
+      }
+      setLoaded(true);
+    } catch (err) {
+      console.error("Failed to load profile", err);
+      setLoaded(true);
     }
   }
 
-  // load once
-  useState(() => {
-    loadProfile();
-  });
-
-  async function onSave(e: any) {
+  async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    if (!session) return alert("You must sign in");
+
+    setSaving(true);
 
     const res = await fetch("/api/profile/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, displayName, bio }),
+      body: JSON.stringify({
+        displayName,
+        bio,
+      }),
     });
 
-    const data = await res.json();
-    setLoading(false);
+    setSaving(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Failed to update profile");
+      const data = await res.json();
+      alert(data?.error || "Failed to update profile");
       return;
     }
 
     alert("Profile updated!");
-    router.reload();
+  }
+
+  if (!session) {
+    return (
+      <main className="max-w-xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-4">Profile</h1>
+        <p className="mt-2">You must be signed in to edit your profile.</p>
+        <div className="mt-4 flex gap-4">
+          <Link className="underline" href="/auth/signin?redirect=/profile">
+            Sign in
+          </Link>
+          <Link className="underline" href="/auth/signup?redirect=/profile">
+            Create account
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="max-w-xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
+      <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
 
-      <form onSubmit={onSave} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Username</label>
-          <input
-            className="w-full border rounded p-2"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
+      {!loaded ? (
+        <p>Loading profile...</p>
+      ) : (
+        <form onSubmit={onSave} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium">Display Name</label>
+            <input
+              className="w-full border rounded p-2"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium">Display Name</label>
-          <input
-            className="w-full border rounded p-2"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium">Bio</label>
+            <textarea
+              className="w-full border rounded p-2 h-32"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium">Bio</label>
-          <textarea
-            className="w-full border rounded p-2"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-          />
-        </div>
-
-        {error && <p className="text-red-600">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-black text-white rounded"
-        >
-          {loading ? "Saving..." : "Save Changes"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Profile"}
+          </button>
+        </form>
+      )}
     </main>
   );
 }
+
