@@ -4,109 +4,122 @@ import type { GetServerSideProps, NextPage } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
-type SubmissionSummary = {
+type SubmissionCard = {
   id: string;
   title: string;
   createdAt: string;
   category: string | null;
+  commentCount: number;
 };
 
-type PublicUser = {
-  id: string;
+type ProfileProps = {
   username: string;
   displayName: string | null;
   bio: string | null;
-  createdAt: string;
-  submissions: SubmissionSummary[];
-  _count: {
+  joinedAt: string;
+  stats: {
     submissions: number;
     comments: number;
   };
+  submissions: SubmissionCard[];
 };
 
-type Props = {
-  user: PublicUser | null;
-};
-
-const PublicProfilePage: NextPage<Props> = ({ user }) => {
-  if (!user) {
-    return (
-      <main className="max-w-3xl mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-4">User not found</h1>
-        <p className="text-gray-600">
-          We couldn&apos;t find that profile. It may have been renamed or does not exist.
-        </p>
-        <Link href="/" className="mt-4 inline-block underline">
-          Go back home
-        </Link>
-      </main>
-    );
-  }
-
-  const joined = new Date(user.createdAt).toLocaleDateString();
+const PublicProfilePage: NextPage<ProfileProps> = ({
+  username,
+  displayName,
+  bio,
+  joinedAt,
+  stats,
+  submissions,
+}) => {
+  const name = displayName || username;
+  const joinedDate = new Date(joinedAt).toLocaleDateString();
 
   return (
-    <main className="max-w-3xl mx-auto py-10">
-      {/* Header */}
-      <section className="mb-8 border-b pb-6">
-        <h1 className="text-3xl font-bold mb-2">
-          {user.displayName || user.username}
-        </h1>
-        <p className="text-gray-600 mb-1">@{user.username}</p>
-        <p className="text-gray-500 text-sm mb-2">Joined {joined}</p>
+    <main className="max-w-4xl mx-auto px-4 py-10 space-y-10">
+      {/* Top profile header */}
+      <section className="space-y-4 border-b pb-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
+          <p className="text-sm text-gray-500">@{username}</p>
+        </div>
 
-        {user.bio && (
-          <p className="mt-3 whitespace-pre-wrap text-gray-800">{user.bio}</p>
-        )}
+        <p className="text-sm text-gray-600 max-w-2xl">
+          {bio || "No bio yet. This Figure has more to say soon."}
+        </p>
 
-        <div className="mt-4 text-sm text-gray-600 flex gap-4">
-          <span>{user._count.submissions} submissions</span>
-          <span>{user._count.comments} comments</span>
+        <div className="flex flex-wrap gap-6 text-xs text-gray-500">
+          <div>
+            <p className="font-semibold text-gray-700 text-xs">Joined</p>
+            <p>{joinedDate}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-700 text-xs">Submissions</p>
+            <p>{stats.submissions}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-700 text-xs">Comments</p>
+            <p>{stats.comments}</p>
+          </div>
         </div>
       </section>
 
       {/* Submissions list */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Submissions</h2>
+      <section className="space-y-4">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold">Submissions</h2>
+          <p className="text-xs text-gray-500">
+            Public work by <span className="font-medium">@{username}</span>
+          </p>
+        </div>
 
-        {user.submissions.length === 0 && (
-          <p className="text-gray-600">No submissions yet.</p>
+        {submissions.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No public submissions yet. Check back soon.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {submissions.map((s) => {
+              const created = new Date(s.createdAt).toLocaleString();
+              return (
+                <li key={s.id}>
+                  <Link
+                    href={`/submissions/${s.id}`}
+                    className="block border rounded-xl px-4 py-3 hover:bg-gray-50 transition shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-sm">{s.title}</h3>
+                        <p className="text-xs text-gray-500">
+                          {created}
+                          {s.category && (
+                            <>
+                              {" "}
+                              · <span>{s.category}</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="text-right text-xs text-gray-500">
+                        <p>{s.commentCount} comments</p>
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
-
-        <ul className="space-y-4">
-          {user.submissions.map((s) => {
-            const created = new Date(s.createdAt).toLocaleString();
-            return (
-              <li
-                key={s.id}
-                className="border rounded px-4 py-3 hover:bg-gray-50 transition"
-              >
-                <Link
-                  href={`/submissions/${s.id}`}
-                  className="text-lg font-semibold underline"
-                >
-                  {s.title || "(untitled submission)"}
-                </Link>
-                <div className="text-sm text-gray-600 mt-1">
-                  <span>{created}</span>
-                  {s.category && (
-                    <>
-                      {" • "}
-                      <span>{s.category}</span>
-                    </>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
       </section>
     </main>
   );
 };
 
-export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-  const username = ctx.params?.username as string | undefined;
+export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
+  ctx
+) => {
+  const username = String(ctx.params?.username || "").trim();
 
   if (!username) {
     return { notFound: true };
@@ -115,19 +128,23 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const user = await prisma.user.findUnique({
     where: { username },
     include: {
+      _count: {
+        select: {
+          submissions: true,
+          comments: true,
+        },
+      },
       submissions: {
+        where: { visibility: "PUBLIC" },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
           title: true,
           createdAt: true,
           category: true,
-        },
-      },
-      _count: {
-        select: {
-          submissions: true,
-          comments: true,
+          _count: {
+            select: { comments: true },
+          },
         },
       },
     },
@@ -137,25 +154,23 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     return { notFound: true };
   }
 
-  // Serialize Dates to strings so Next.js can pass them as JSON
-  const safeUser: PublicUser = {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
-    bio: user.bio,
-    createdAt: user.createdAt.toISOString(),
-    _count: user._count,
-    submissions: user.submissions.map((s) => ({
-      id: s.id,
-      title: s.title,
-      category: s.category,
-      createdAt: s.createdAt.toISOString(),
-    })),
-  };
-
   return {
     props: {
-      user: safeUser,
+      username: user.username,
+      displayName: user.displayName,
+      bio: user.bio,
+      joinedAt: user.createdAt.toISOString(),
+      stats: {
+        submissions: user._count.submissions,
+        comments: user._count.comments,
+      },
+      submissions: user.submissions.map((s) => ({
+        id: s.id,
+        title: s.title,
+        createdAt: s.createdAt.toISOString(),
+        category: s.category,
+        commentCount: s._count.comments,
+      })),
     },
   };
 };
