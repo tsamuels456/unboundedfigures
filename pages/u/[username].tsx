@@ -48,6 +48,7 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           {bio || "No bio yet. This Figure has more to say soon."}
         </p>
 
+        {/* Stats row */}
         <div className="flex flex-wrap gap-6 text-xs text-gray-500">
           <div>
             <p className="font-semibold text-gray-700 text-xs">Joined</p>
@@ -62,6 +63,38 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
             <p>{stats.comments}</p>
           </div>
         </div>
+
+        {/* --------------- A.2 NEW BLOCK: Academic + Social Fusion --------------- */}
+        <div className="pt-4 border-t">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            About this Figure
+          </h2>
+          <p className="text-sm text-gray-600 mt-1 max-w-2xl leading-relaxed">
+            A mind contributing to open mathematical exploration. Their work
+            reflects curiosity, self-driven inquiry, and a commitment to
+            collaborative discovery.
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+            <div className="p-3 rounded-lg border bg-gray-50">
+              <p className="font-semibold text-gray-700">Focus Areas</p>
+              <p className="mt-1 text-gray-600">Patterns • Number Theory • Logic</p>
+            </div>
+
+            <div className="p-3 rounded-lg border bg-gray-50">
+              <p className="font-semibold text-gray-700">Research Style</p>
+              <p className="mt-1 text-gray-600">Exploratory • Visual • Conjectural</p>
+            </div>
+
+            <div className="p-3 rounded-lg border bg-gray-50">
+              <p className="font-semibold text-gray-700">Collaborative Signal</p>
+              <p className="mt-1 text-gray-600">
+                Open to discussion and mathematical dialogue.
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* -------------------------------------------------------------------------- */}
       </section>
 
       {/* Submissions list */}
