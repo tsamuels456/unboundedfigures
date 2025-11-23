@@ -38,7 +38,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
 
       {/* ========== TOP HEADER ========== */}
       <section className="space-y-4 border-b pb-8">
-        <h1 className="text-4xl font-serif font-semibold tracking-tight">
+        <h1 className="text-4xl font-serif font-semibold tracking-tight leading-tight text-gray-900">
+
           {name}
         </h1>
 
@@ -63,6 +64,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           </div>
         </div>
       </section>
+      <div className="section-line" />
+
 
       {/* ========== ABOUT THIS FIGURE ========== */}
       <section className="space-y-4">
@@ -78,7 +81,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
 
           {/* Focus Areas */}
-          <div className="rounded-xl border p-4 bg-white shadow-sm">
+          <div className="research-card p-4">
+
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Focus Areas
             </p>
@@ -88,7 +92,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           </div>
 
           {/* Research Style */}
-          <div className="rounded-xl border p-4 bg-white shadow-sm">
+          <div className="research-card p-4">
+
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Research Style
             </p>
@@ -98,7 +103,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           </div>
 
           {/* Collaboration Signal */}
-          <div className="rounded-xl border p-4 bg-white shadow-sm">
+          <div className="research-card p-4">
+
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Collaborative Signal
             </p>
@@ -112,7 +118,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
       {/* ========== SUBMISSIONS ========== */}
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold">Submissions</h2>
+          <h2 className="text-lg font-serif font-semibold text-gray-900 tracking-tight">
+Submissions</h2>
           <p className="text-xs text-gray-500">
             Public work by <span className="font-medium">@{username}</span>
           </p>
@@ -130,7 +137,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
                 <li key={s.id}>
                   <Link
                     href={`/submissions/${s.id}`}
-                    className="block border rounded-xl px-5 py-4 bg-white shadow-sm hover:shadow-md transition"
+                    className="block research-card px-5 py-4"
+
                   >
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
