@@ -37,67 +37,64 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-10 space-y-10">
-      {/* Top profile header */}
-      <section className="space-y-4 border-b pb-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
-          <p className="text-sm text-gray-500">@{username}</p>
+      {/* ============= ACADEMIC-CREATIVE HEADER BLOCK ============= */}
+      <section className="space-y-6 border-b pb-8">
+        {/* Name + Username */}
+        <div>
+          <h1 className="text-4xl font-extrabold tracking-tight">{name}</h1>
+          <p className="text-md text-gray-500">@{username}</p>
         </div>
 
-        <p className="text-sm text-gray-600 max-w-2xl">
-          {bio || "No bio yet. This Figure has more to say soon."}
+        {/* Bio */}
+        <p className="text-base text-gray-700 max-w-2xl leading-relaxed">
+          {bio ||
+            "This Figure has not written a bio yet. Their research and ideas are still unfolding."}
         </p>
 
-        {/* Stats row */}
-        <div className="flex flex-wrap gap-6 text-xs text-gray-500">
-          <div>
-            <p className="font-semibold text-gray-700 text-xs">Joined</p>
-            <p>{joinedDate}</p>
+        {/* Academic identity grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div className="p-4 rounded-lg border bg-white/80 shadow-sm">
+            <p className="font-semibold text-gray-800">Focus Areas</p>
+            <p className="text-gray-600 text-xs mt-1">
+              Patterns • Number Theory • Logic
+            </p>
           </div>
-          <div>
-            <p className="font-semibold text-gray-700 text-xs">Submissions</p>
-            <p>{stats.submissions}</p>
+
+          <div className="p-4 rounded-lg border bg-white/80 shadow-sm">
+            <p className="font-semibold text-gray-800">Research Style</p>
+            <p className="text-gray-600 text-xs mt-1">
+              Exploratory • Visual • Conjectural
+            </p>
           </div>
-          <div>
-            <p className="font-semibold text-gray-700 text-xs">Comments</p>
-            <p>{stats.comments}</p>
-          </div>
-        </div>
 
-        {/* --------------- A.2 NEW BLOCK: Academic + Social Fusion --------------- */}
-        <div className="pt-4 border-t">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-            About this Figure
-          </h2>
-          <p className="text-sm text-gray-600 mt-1 max-w-2xl leading-relaxed">
-            A mind contributing to open mathematical exploration. Their work
-            reflects curiosity, self-driven inquiry, and a commitment to
-            collaborative discovery.
-          </p>
-
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-            <div className="p-3 rounded-lg border bg-gray-50">
-              <p className="font-semibold text-gray-700">Focus Areas</p>
-              <p className="mt-1 text-gray-600">Patterns • Number Theory • Logic</p>
-            </div>
-
-            <div className="p-3 rounded-lg border bg-gray-50">
-              <p className="font-semibold text-gray-700">Research Style</p>
-              <p className="mt-1 text-gray-600">Exploratory • Visual • Conjectural</p>
-            </div>
-
-            <div className="p-3 rounded-lg border bg-gray-50">
-              <p className="font-semibold text-gray-700">Collaborative Signal</p>
-              <p className="mt-1 text-gray-600">
-                Open to discussion and mathematical dialogue.
-              </p>
-            </div>
+          <div className="p-4 rounded-lg border bg-white/80 shadow-sm">
+            <p className="font-semibold text-gray-800">Collaborative Signal</p>
+            <p className="text-gray-600 text-xs mt-1">
+              Open to discussion and mathematical dialogue
+            </p>
           </div>
         </div>
-        {/* -------------------------------------------------------------------------- */}
+
+        {/* Stats */}
+        <div className="flex gap-8 text-sm pt-2">
+          <div>
+            <p className="font-semibold">Joined</p>
+            <p className="text-gray-600">{joinedDate}</p>
+          </div>
+
+          <div>
+            <p className="font-semibold">Submissions</p>
+            <p className="text-gray-600">{stats.submissions}</p>
+          </div>
+
+          <div>
+            <p className="font-semibold">Comments</p>
+            <p className="text-gray-600">{stats.comments}</p>
+          </div>
+        </div>
       </section>
 
-      {/* Submissions list */}
+      {/* SUBMISSIONS SECTION */}
       <section className="space-y-4">
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-semibold">Submissions</h2>
@@ -154,19 +151,12 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
 ) => {
   const username = String(ctx.params?.username || "").trim();
 
-  if (!username) {
-    return { notFound: true };
-  }
+  if (!username) return { notFound: true };
 
   const user = await prisma.user.findUnique({
     where: { username },
     include: {
-      _count: {
-        select: {
-          submissions: true,
-          comments: true,
-        },
-      },
+      _count: { select: { submissions: true, comments: true }},
       submissions: {
         where: { visibility: "PUBLIC" },
         orderBy: { createdAt: "desc" },
@@ -175,17 +165,13 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
           title: true,
           createdAt: true,
           category: true,
-          _count: {
-            select: { comments: true },
-          },
+          _count: { select: { comments: true }},
         },
       },
     },
   });
 
-  if (!user) {
-    return { notFound: true };
-  }
+  if (!user) return { notFound: true };
 
   return {
     props: {
