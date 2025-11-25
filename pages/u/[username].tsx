@@ -10,6 +10,11 @@ type SubmissionCard = {
   commentCount: number;
 };
 
+type NeighborUser = {
+  username: string;
+  displayName: string | null;
+} | null;
+
 type ProfileProps = {
   username: string;
   displayName: string | null;
@@ -20,7 +25,10 @@ type ProfileProps = {
     comments: number;
   };
   submissions: SubmissionCard[];
+  previousUser: NeighborUser;
+  nextUser: NeighborUser;
 };
+
 
 const PublicProfilePage: NextPage<ProfileProps> = ({
   username,
@@ -29,7 +37,10 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
   joinedAt,
   stats,
   submissions,
+  previousUser,
+  nextUser,
 }) => {
+
   const name = displayName || username;
   const joinedDate = new Date(joinedAt).toLocaleDateString();
 
@@ -164,18 +175,55 @@ Submissions</h2>
           </ul>
         )}
       </section>
+{/* NAVIGATION: PREVIOUS / NEXT FIGURE */}
+<footer className="flex items-center justify-between pt-10 text-sm text-gray-600">
+
+  {/* Previous */}
+  {previousUser ? (
+    <Link
+      href={`/u/${previousUser.username}`}
+      className="hover:underline"
+    >
+      ← Previous: {previousUser.displayName || "@" + previousUser.username}
+    </Link>
+  ) : (
+    <span />
+  )}
+
+  {/* Next */}
+  {nextUser ? (
+    <Link
+      href={`/u/${nextUser.username}`}
+      className="hover:underline"
+    >
+      Next: {nextUser.displayName || "@" + nextUser.username} →
+    </Link>
+  ) : (
+    <span />
+  )}
+
+</footer>
 
     </main>
   );
 };
 
 export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) => {
-  const username = String(ctx.params?.username || "");
+  const username = String(ctx.params?.username || "").trim();
+
+  if (!username) {
+    return { notFound: true };
+  }
 
   const user = await prisma.user.findUnique({
     where: { username },
     include: {
-      _count: { select: { submissions: true, comments: true } },
+      _count: {
+        select: {
+          submissions: true,
+          comments: true,
+        },
+      },
       submissions: {
         where: { visibility: "PUBLIC" },
         orderBy: { createdAt: "desc" },
@@ -184,13 +232,38 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) 
           title: true,
           createdAt: true,
           category: true,
-          _count: { select: { comments: true } },
+          _count: {
+            select: { comments: true },
+          },
         },
       },
     },
   });
 
-  if (!user) return { notFound: true };
+  // ✅ Narrow the type here
+  if (!user) {
+    return { notFound: true };
+  }
+
+  // ✅ Now TypeScript knows `user` is not null
+
+  const previousUser = await prisma.user.findFirst({
+    where: { createdAt: { lt: user.createdAt } },
+    orderBy: { createdAt: "desc" },
+    select: {
+      username: true,
+      displayName: true,
+    },
+  });
+
+  const nextUser = await prisma.user.findFirst({
+    where: { createdAt: { gt: user.createdAt } },
+    orderBy: { createdAt: "asc" },
+    select: {
+      username: true,
+      displayName: true,
+    },
+  });
 
   return {
     props: {
@@ -209,8 +282,11 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) 
         category: s.category,
         commentCount: s._count.comments,
       })),
+      previousUser: previousUser || null,
+      nextUser: nextUser || null,
     },
   };
 };
+
 
 export default PublicProfilePage;
