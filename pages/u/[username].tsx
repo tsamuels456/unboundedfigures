@@ -123,6 +123,20 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
               Open to discussion and mathematical dialogue.
             </p>
           </div>
+          {/* Work Philosophy */}
+<div className="research-card p-4">
+  <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
+    Work Philosophy
+  </p>
+
+  <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+    Driven by curiosity, guided by structure. This Figure approaches 
+    mathematical exploration with patience, clarity, and a willingness 
+    to revisit ideas from new angles — believing that rigorous thinking 
+    and creative insight strengthen each other.
+  </p>
+</div>
+
         </div>
       </section>
 
