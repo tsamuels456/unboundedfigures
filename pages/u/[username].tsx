@@ -2,6 +2,16 @@ import type { GetServerSideProps, NextPage } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+// Elegant academic divider
+const Divider = ({ title }: { title: string }) => (
+  <div className="relative my-10">
+    <hr className="border-gray-300" />
+    <span className="absolute left-0 -top-3 bg-white px-2 text-xs tracking-widest text-gray-500 uppercase">
+      {title}
+    </span>
+  </div>
+);
+
 type SubmissionCard = {
   id: string;
   title: string;
@@ -49,10 +59,35 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
 
       {/* ========== TOP HEADER ========== */}
       <section className="space-y-4 border-b pb-8">
-        <h1 className="text-4xl font-serif font-semibold tracking-tight leading-tight text-gray-900">
+        <section className="space-y-3 pb-6 border-b">
+  <h1 className="text-4xl font-serif font-semibold leading-tight tracking-tight text-gray-900">
+    {name}
+  </h1>
 
-          {name}
-        </h1>
+  <p className="text-sm text-gray-600">@{username}</p>
+
+  <p className="text-gray-700 max-w-2xl leading-relaxed">
+    {bio || "This Figure hasn’t written a bio yet — but their journey is unfolding."}
+  </p>
+
+  <div className="flex flex-wrap gap-8 text-xs text-gray-500">
+    <div>
+      <p className="font-semibold text-gray-700">Joined</p>
+      <p>{joinedDate}</p>
+    </div>
+
+    <div>
+      <p className="font-semibold text-gray-700">Submissions</p>
+      <p>{stats.submissions}</p>
+    </div>
+
+    <div>
+      <p className="font-semibold text-gray-700">Comments</p>
+      <p>{stats.comments}</p>
+    </div>
+  </div>
+</section>
+
 
         <p className="text-gray-500 text-sm">@{username}</p>
 
@@ -92,7 +127,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
 
           {/* Focus Areas */}
-          <div className="research-card p-4">
+          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+>
 
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Focus Areas
@@ -103,7 +139,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           </div>
 
           {/* Research Style */}
-          <div className="research-card p-4">
+          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+>
 
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Research Style
@@ -114,7 +151,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           </div>
 
           {/* Collaboration Signal */}
-          <div className="research-card p-4">
+          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+>
 
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Collaborative Signal
@@ -124,7 +162,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
             </p>
           </div>
           {/* Work Philosophy */}
-<div className="research-card p-4">
+<div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+>
   <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
     Work Philosophy
   </p>
@@ -162,9 +201,8 @@ Submissions</h2>
                 <li key={s.id}>
                   <Link
                     href={`/submissions/${s.id}`}
-                    className="block research-card px-5 py-4"
-
-                  >
+                    className="block border rounded-lg px-4 py-4 hover:shadow-md hover:bg-white transition bg-gray-50"
+>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <h3 className="font-medium text-sm text-gray-800">
