@@ -58,7 +58,7 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
     <main className="max-w-4xl mx-auto px-4 py-12 space-y-14 font-sans">
 
       {/* ========== TOP HEADER ========== */}
-      <section className="space-y-4 border-b pb-8">
+      
         <section className="space-y-3 pb-6 border-b">
   <h1 className="text-4xl font-serif font-semibold leading-tight tracking-tight text-gray-900">
     {name}
@@ -87,32 +87,6 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
     </div>
   </div>
 </section>
-
-
-        <p className="text-gray-500 text-sm">@{username}</p>
-
-        <p className="text-gray-700 max-w-2xl text-sm leading-relaxed">
-          {bio || "This Figure hasn’t written a bio yet — but their journey is unfolding."}
-        </p>
-
-        <div className="flex flex-wrap gap-10 pt-2 text-xs text-gray-600">
-          <div>
-            <p className="font-semibold text-gray-800">Joined</p>
-            <p>{joinedDate}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-800">Submissions</p>
-            <p>{stats.submissions}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-800">Comments</p>
-            <p>{stats.comments}</p>
-          </div>
-        </div>
-      </section>
-      <div className="section-line" />
-
-
       {/* ========== ABOUT THIS FIGURE ========== */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight text-gray-800">
