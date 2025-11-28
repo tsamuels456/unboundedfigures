@@ -99,7 +99,13 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
 </section>
 
       {/* ========== ABOUT THIS FIGURE ========== */}
-      <section className="space-y-4">
+      <motion.section
+    className="space-y-4"
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.35 }}
+    viewport={{ once: true }}
+>
         <h2 className="text-lg font-semibold tracking-tight text-gray-800">
           About This Figure
         </h2>
@@ -109,7 +115,14 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
           self-driven inquiry, and a commitment to collaborative discovery.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        <motion.div
+    className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2"
+    initial={{ opacity: 0 }}
+    whileInView={{ opacity: 1 }}
+    transition={{ duration: 0.4 }}
+    viewport={{ once: true }}
+>
+
 
           {/* Focus Areas */}
           <motion.div
@@ -189,11 +202,17 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
 </motion.div>
 
 
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       {/* ========== SUBMISSIONS ========== */}
-      <section className="space-y-6">
+      <motion.section
+    className="space-y-6"
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.35 }}
+    viewport={{ once: true }}
+>
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-serif font-semibold text-gray-900 tracking-tight">
 Submissions</h2>
@@ -244,9 +263,16 @@ Submissions</h2>
 
           </ul>
         )}
-      </section>
+      </motion.section>
 {/* NAVIGATION: PREVIOUS / NEXT FIGURE */}
-<footer className="flex items-center justify-between pt-10 text-sm text-gray-600">
+<motion.footer
+    className="flex items-center justify-between pt-10 text-sm text-gray-600"
+    initial={{ opacity: 0, y: 15 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+    viewport={{ once: true }}
+>
+
 
   {/* Previous */}
   {previousUser ? (
@@ -272,7 +298,7 @@ Submissions</h2>
     <span />
   )}
 
-</footer>
+</motion.footer>
 
     </motion.main>
 );
