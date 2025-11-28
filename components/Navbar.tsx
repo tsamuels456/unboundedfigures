@@ -8,34 +8,52 @@ export default function Navbar() {
 
   return (
     <nav className="flex justify-between p-4 bg-gray-100">
+      {/* LEFT SIDE */}
       <div className="flex gap-4">
-        <Link href="/">Home</Link>
-        <Link href="/submit">Submit</Link>
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>
+        <Link href="/submit" className="hover:underline">
+          Submit
+        </Link>
       </div>
 
+      {/* RIGHT SIDE */}
       <div className="flex gap-3">
         {session ? (
           <>
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/profile">Profile</Link>
-            <button
-  type="button"
-  onClick={() => supabase.auth.signOut()}
-  className="cursor-pointer text-blue-600 hover:underline"
->
-  Sign out
-</button>
+            <Link href="/dashboard" className="hover:underline">
+              Dashboard
+            </Link>
 
+            <Link href="/profile" className="hover:underline">
+              Profile
+            </Link>
+
+            <button
+              type="button"
+              onClick={async () => {
+                await supabase.auth.signOut();
+              }}
+              className="cursor-pointer hover:underline"
+            >
+              Sign out
+            </button>
           </>
         ) : (
           <>
-            <Link href="/auth/signin">Sign in</Link>
-            <Link href="/auth/signup">Sign up</Link>
+            <Link href="/auth/signin" className="hover:underline">
+              Sign in
+            </Link>
+            <Link href="/auth/signup" className="hover:underline">
+              Create account
+            </Link>
           </>
         )}
       </div>
     </nav>
   );
 }
+
 
 
