@@ -1,6 +1,9 @@
 import type { GetServerSideProps, NextPage } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { motion } from "framer-motion";
+import Avatar from "@/components/Avatar";
+
 
 // Elegant academic divider
 const Divider = ({ title }: { title: string }) => (
@@ -55,38 +58,46 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
   const joinedDate = new Date(joinedAt).toLocaleDateString();
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12 space-y-14 font-sans">
+  <motion.main
+    className="max-w-4xl mx-auto px-4 py-10 space-y-14"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6, ease: "easeOut" }}
+  >
 
-      {/* ========== TOP HEADER ========== */}
-      
-        <section className="space-y-3 pb-6 border-b">
-  <h1 className="text-4xl font-serif font-semibold leading-tight tracking-tight text-gray-900">
-    {name}
-  </h1>
 
-  <p className="text-sm text-gray-600">@{username}</p>
+      {/* ======== TOP HEADER ======== */}
+<section className="space-y-4 pb-6 border-b">
 
-  <p className="text-gray-700 max-w-2xl leading-relaxed">
-    {bio || "This Figure hasn’t written a bio yet — but their journey is unfolding."}
+  <div className="flex items-center gap-4">
+    <Avatar name={username} size={64} />
+
+    <div>
+      <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
+      <p className="text-sm text-gray-500">@{username}</p>
+    </div>
+  </div>
+
+  <p className="text-sm text-gray-700 max-w-2xl leading-relaxed">
+    {bio || "This Figure has not written a bio yet — but their journey is unfolding."}
   </p>
 
-  <div className="flex flex-wrap gap-8 text-xs text-gray-500">
+  <div className="flex flex-wrap gap-6 text-xs text-gray-500">
     <div>
-      <p className="font-semibold text-gray-700">Joined</p>
+      <p className="font-semibold text-gray-700 text-xs">Joined</p>
       <p>{joinedDate}</p>
     </div>
-
     <div>
-      <p className="font-semibold text-gray-700">Submissions</p>
+      <p className="font-semibold text-gray-700 text-xs">Submissions</p>
       <p>{stats.submissions}</p>
     </div>
-
     <div>
-      <p className="font-semibold text-gray-700">Comments</p>
+      <p className="font-semibold text-gray-700 text-xs">Comments</p>
       <p>{stats.comments}</p>
     </div>
   </div>
 </section>
+
       {/* ========== ABOUT THIS FIGURE ========== */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight text-gray-800">
@@ -101,8 +112,14 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
 
           {/* Focus Areas */}
-          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+          <motion.div
+  className="research-card p-4"
+  initial={{ opacity: 0, y: 10 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.35 }}
+  viewport={{ once: true }}
 >
+
 
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Focus Areas
@@ -110,11 +127,18 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
             <p className="text-sm text-gray-600 mt-1">
               Patterns • Number Theory • Logic
             </p>
-          </div>
+          </motion.div>
+
 
           {/* Research Style */}
-          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+          <motion.div
+  className="research-card p-4"
+  initial={{ opacity: 0, y: 10 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.35 }}
+  viewport={{ once: true }}
 >
+
 
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Research Style
@@ -122,11 +146,18 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
             <p className="text-sm text-gray-600 mt-1">
               Exploratory • Visual • Conjectural
             </p>
-          </div>
+          </motion.div>
+
 
           {/* Collaboration Signal */}
-          <div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+          <motion.div
+  className="research-card p-4"
+  initial={{ opacity: 0, y: 10 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.35 }}
+  viewport={{ once: true }}
 >
+
 
             <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
               Collaborative Signal
@@ -134,10 +165,17 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
             <p className="text-sm text-gray-600 mt-1">
               Open to discussion and mathematical dialogue.
             </p>
-          </div>
+          </motion.div>
+
           {/* Work Philosophy */}
-<div className="p-4 border rounded-lg shadow-sm hover:shadow-md transition bg-white"
+<motion.div
+  className="research-card p-4"
+  initial={{ opacity: 0, y: 10 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.35 }}
+  viewport={{ once: true }}
 >
+
   <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">
     Work Philosophy
   </p>
@@ -148,7 +186,8 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
     to revisit ideas from new angles — believing that rigorous thinking 
     and creative insight strengthen each other.
   </p>
-</div>
+</motion.div>
+
 
         </div>
       </section>
@@ -169,35 +208,40 @@ Submissions</h2>
           </p>
         ) : (
           <ul className="space-y-4">
-            {submissions.map((s) => {
-              const created = new Date(s.createdAt).toLocaleString();
-              return (
-                <li key={s.id}>
-                  <Link
-                    href={`/submissions/${s.id}`}
-                    className="block border rounded-lg px-4 py-4 hover:shadow-md hover:bg-white transition bg-gray-50"
->
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-medium text-sm text-gray-800">
-                          {s.title}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {created}
-                          {s.category && (
-                            <> · <span>{s.category}</span></>
-                          )}
-                        </p>
-                      </div>
+            {submissions.map((s, i) => {
+  const created = new Date(s.createdAt).toLocaleString();
 
-                      <p className="text-xs text-gray-500">
-                        {s.commentCount} comments
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
+  return (
+    <motion.li
+      key={s.id}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: i * 0.06 }}   // <— stagger
+    >
+      <Link
+        href={`/submissions/${s.id}`}
+        className="block research-card px-5 py-4 rounded-lg bg-white hover:bg-gray-50 shadow-sm hover:shadow-md transition"
+      >
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h3 className="font-medium text-gray-800">{s.title}</h3>
+            <p className="text-xs text-gray-500">
+              {created}
+              {s.category && (
+                <>
+                  {" • "}
+                  <span>{s.category}</span>
+                </>
+              )}
+            </p>
+          </div>
+          <p className="text-xs text-gray-500">{s.commentCount} comments</p>
+        </div>
+      </Link>
+    </motion.li>
+  );
+})}
+
           </ul>
         )}
       </section>
@@ -230,8 +274,9 @@ Submissions</h2>
 
 </footer>
 
-    </main>
-  );
+    </motion.main>
+);
+
 };
 
 export const getServerSideProps: GetServerSideProps<ProfileProps> = async (ctx) => {
