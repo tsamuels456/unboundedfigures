@@ -4,6 +4,12 @@
   --background: #ffffff;
   --foreground: #171717;
 }
+:root {
+  --accent-blue: #4a7bd1;
+  --accent-brown: #9a7b4f;
+  --accent-blue-soft: rgba(74,123,209,0.08);
+  --border-soft: rgba(0,0,0,0.08);
+}
 
 @theme inline {
   --color-background: var(--background);
