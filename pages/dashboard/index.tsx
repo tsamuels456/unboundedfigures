@@ -10,14 +10,18 @@ type DashboardProps = {
   displayName: string | null;
   submissions: number;
   comments: number;
+  activity: any[]; // or define a nicer union type later
 };
+
 
 const DashboardPage: NextPage<DashboardProps> = ({
   username,
   displayName,
   submissions,
   comments,
+  activity,
 }) => {
+
   const name = displayName || username;
 
   return (
@@ -54,6 +58,62 @@ const DashboardPage: NextPage<DashboardProps> = ({
           </Link>
         </motion.div>
       </section>
+      {/* RECENT ACTIVITY */}
+<section className="space-y-6">
+  <h2 className="text-xl font-semibold tracking-tight">Recent Activity</h2>
+
+  {activity.length === 0 ? (
+    <p className="text-gray-500 text-sm">
+      No recent activity yet. Start contributing and it will appear here.
+    </p>
+  ) : (
+    <ul className="space-y-4">
+      {activity.map((item) => {
+        const date = new Date(item.createdAt).toLocaleString();
+
+        return (
+          <motion.li
+            key={item.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition"
+          >
+            {item.type === "submission" ? (
+              <>
+                <p className="font-medium text-gray-800">
+                  📝 New Submission:{" "}
+                  <Link
+                    href={`/submissions/${item.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {item.title}
+                  </Link>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{date}</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-gray-800">
+                  💬 Commented on{" "}
+                  <Link
+                    href={`/submissions/${item.submission.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {item.submission.title}
+                  </Link>
+                </p>
+                <p className="text-gray-600 mt-1">{item.content}</p>
+                <p className="text-xs text-gray-500 mt-1">{date}</p>
+              </>
+            )}
+          </motion.li>
+        );
+      })}
+    </ul>
+  )}
+</section>
+
     </motion.main>
   );
 };
@@ -82,6 +142,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
 
+  // Pull profile
   const me = await prisma.user.findUnique({
     where: { authId: user.id },
     select: {
@@ -97,14 +158,59 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     };
   }
 
+  // Fetch submissions (last 20)
+  const mySubmissions = await prisma.submission.findMany({
+    where: { authorId: user.id },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      category: true,
+    },
+  });
+
+  // Fetch comments written by the user (last 20)
+  const myComments = await prisma.comment.findMany({
+    where: { authorId: user.id },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      submission: {
+        select: { id: true, title: true },
+      },
+    },
+  });
+
+  // Merge + sort newest → oldest
+  const activity = [
+    ...mySubmissions.map((s) => ({
+      type: "submission",
+      id: s.id,
+      createdAt: s.createdAt.toISOString(),
+      title: s.title,
+      category: s.category,
+    })),
+    ...myComments.map((c) => ({
+      type: "comment",
+      id: c.id,
+      createdAt: c.createdAt.toISOString(),
+      content: c.content,
+      submission: c.submission,
+    })),
+  ].sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
+
   return {
     props: {
       username: me.username,
       displayName: me.displayName,
       submissions: me._count.submissions,
       comments: me._count.comments,
+      activity,
     },
   };
 };
-
-export default DashboardPage;
