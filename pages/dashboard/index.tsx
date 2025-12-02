@@ -1,9 +1,9 @@
 // pages/dashboard/index.tsx
-
 import type { GetServerSideProps, NextPage } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getServerSupabaseClient } from "@/lib/supabaseServer";
-import Link from "next/link";
+import { motion } from "framer-motion";
 
 type DashboardProps = {
   username: string;
@@ -21,53 +21,57 @@ const DashboardPage: NextPage<DashboardProps> = ({
   const name = displayName || username;
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+    <motion.main
+      className="max-w-5xl mx-auto px-6 py-10 space-y-14"
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* HEADER */}
       <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {name}&apos;s Dashboard
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">{name}'s Dashboard</h1>
         <p className="text-gray-600 text-sm">
           View your activity, contributions, and progress.
         </p>
       </header>
 
-      {/* DASHBOARD STATS GRID */}
+      {/* GRID */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="border rounded-lg p-4 bg-white shadow-sm">
-          <p className="text-sm text-gray-600">Total Submissions</p>
-          <p className="text-2xl font-semibold">{submissions}</p>
-        </div>
+        <OverviewCard title="Total Submissions" value={submissions} />
+        <OverviewCard title="Total Comments" value={comments} />
 
-        <div className="border rounded-lg p-4 bg-white shadow-sm">
-          <p className="text-sm text-gray-600">Total Comments</p>
-          <p className="text-2xl font-semibold">{comments}</p>
-        </div>
-
-        <div className="border rounded-lg p-4 bg-white shadow-sm">
-          <p className="text-sm text-gray-600">Public Profile</p>
+        <motion.div
+          whileHover={{ y: -2, scale: 1.01 }}
+          transition={{ duration: 0.2 }}
+          className="border rounded-xl p-5 bg-white shadow-sm hover:shadow-md"
+        >
+          <p className="text-sm font-semibold text-gray-700">Public Profile</p>
           <Link
             href={`/u/${username}`}
-            className="text-blue-700 hover:underline text-sm"
+            className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
           >
             View your public page →
           </Link>
-        </div>
+        </motion.div>
       </section>
-    </main>
+    </motion.main>
   );
 };
 
-export default DashboardPage;
+const OverviewCard = ({ title, value }: { title: string; value: number }) => (
+  <motion.div
+    whileHover={{ y: -2, scale: 1.01 }}
+    transition={{ duration: 0.2 }}
+    className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md"
+  >
+    <p className="text-sm font-semibold text-gray-700">{title}</p>
+    <p className="text-3xl font-light mt-2">{value}</p>
+  </motion.div>
+);
 
-export const getServerSideProps: GetServerSideProps<
-  DashboardProps
-> = async (ctx) => {
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const supabase = getServerSupabaseClient(ctx);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } = {} } = await supabase.auth.getUser();
 
   if (!user) {
     return {
@@ -78,29 +82,29 @@ export const getServerSideProps: GetServerSideProps<
     };
   }
 
-  // Fetch from Prisma by authId
-  const profile = await prisma.user.findUnique({
+  const me = await prisma.user.findUnique({
     where: { authId: user.id },
-    include: {
-      _count: {
-        select: {
-          submissions: true,
-          comments: true,
-        },
-      },
+    select: {
+      username: true,
+      displayName: true,
+      _count: { select: { submissions: true, comments: true } },
     },
   });
 
-  if (!profile) {
-    return { notFound: true };
+  if (!me) {
+    return {
+      redirect: { destination: "/api/me/ensure", permanent: false },
+    };
   }
 
   return {
     props: {
-      username: profile.username,
-      displayName: profile.displayName,
-      submissions: profile._count.submissions,
-      comments: profile._count.comments,
+      username: me.username,
+      displayName: me.displayName,
+      submissions: me._count.submissions,
+      comments: me._count.comments,
     },
   };
 };
+
+export default DashboardPage;
