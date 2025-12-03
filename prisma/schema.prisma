@@ -8,21 +8,24 @@ datasource db {
 }
 
 model User {
-  projectsLed Project[]       @relation("ProjectLead")
-  id          String   @id @default(cuid())
-  username    String   @unique
+  projectsLed Project[] @relation("ProjectLead")
+  id          String    @id @default(cuid())
+  username    String    @unique
   displayName String?
   bio         String?
-  role        Role     @default(FIGURE)
-  createdAt   DateTime @default(now())
+  role        Role      @default(FIGURE)
+  createdAt   DateTime  @default(now())
   submissions Submission[]
   projects    ProjectMember[]
-  comments     Comment[]
+  comments    Comment[]
 
+  // Correct associations
+  followers   Follow[] @relation("UserFollowers")
+  following   Follow[] @relation("UserFollowing")
 
-  // NEW: link to Supabase auth.users.id (UUID)
   authId      String?  @unique
 }
+
 
 model Submission {
   id            String   @id @default(cuid())
@@ -103,6 +106,21 @@ model Comment {
   // Relations
   author       User        @relation(fields: [authorId], references: [id])
   submission   Submission  @relation(fields: [submissionId], references: [id])
+}
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+
+  // follower → "following" relation
+  follower    User @relation("UserFollowing", fields: [followerId], references: [id])
+
+  // following → "followers" relation
+  following   User @relation("UserFollowers", fields: [followingId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }
 
 

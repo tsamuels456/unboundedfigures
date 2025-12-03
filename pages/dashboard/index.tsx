@@ -30,9 +30,12 @@ type DashboardProps = {
   displayName: string | null;
   submissions: number;
   comments: number;
+  followers: number;
+  following: number;
   activity: ActivityItem[];
   recentWork: RecentWorkItem[];
 };
+
 
 /* ---------- Small helper components ---------- */
 
@@ -67,9 +70,12 @@ const DashboardPage: NextPage<DashboardProps> = ({
   displayName,
   submissions,
   comments,
+  followers,
+  following,
   activity,
   recentWork,
 }) => {
+
   const name = displayName || username;
 
   return (
@@ -96,30 +102,32 @@ const DashboardPage: NextPage<DashboardProps> = ({
           </header>
 
           {/* GRID: overview + public profile card */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <OverviewCard title="Total submissions" value={submissions} />
-            <OverviewCard title="Total comments" value={comments} />
-            <motion.div
-              whileHover={{ y: -2, scale: 1.01 }}
-              transition={{ duration: 0.2 }}
-              className="border rounded-xl px-4 py-4 bg-white shadow-sm hover:shadow-md flex flex-col justify-between"
-            >
-              <p className="text-xs font-semibold tracking-[0.16em] uppercase text-gray-500">
-                Public profile
-              </p>
-              <div className="mt-2 text-sm">
-                <p className="text-gray-600 mb-1">
-                  Share your work as <span className="font-medium">@{username}</span>.
-                </p>
-                <Link
-                  href={`/u/${username}`}
-                  className="inline-flex items-center text-xs text-blue-700 hover:underline"
-                >
-                  View your public page →
-                </Link>
-              </div>
-            </motion.div>
-          </section>
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <OverviewCard title="Total submissions" value={submissions} />
+  <OverviewCard title="Total comments" value={comments} />
+  <OverviewCard title="Followers" value={followers} />
+  <motion.div
+    whileHover={{ y: -2, scale: 1.01 }}
+    transition={{ duration: 0.2 }}
+    className="border rounded-xl px-4 py-4 bg-white shadow-sm hover:shadow-md flex flex-col justify-between"
+  >
+    <p className="text-xs font-semibold tracking-[0.16em] uppercase text-gray-500">
+      Public profile
+    </p>
+    <div className="mt-2 text-sm">
+      <p className="text-gray-600 mb-1">
+        Share your work as <span className="font-medium">@{username}</span>.
+      </p>
+      <Link
+        href={`/u/${username}`}
+        className="inline-flex items-center text-xs text-blue-700 hover:underline"
+      >
+        View your public page →
+      </Link>
+    </div>
+  </motion.div>
+</section>
+
 
           {/* YOUR WORK */}
           <section className="space-y-3">
@@ -259,19 +267,22 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async (
 
   // Pull profile
   const me = await prisma.user.findUnique({
-    where: { authId: user.id },
-    select: {
-      id: true,
-      username: true,
-      displayName: true,
-      _count: {
-        select: {
-          submissions: true,
-          comments: true,
-        },
+  where: { authId: user.id },
+  select: {
+    id: true,
+    username: true,
+    displayName: true,
+    _count: {
+      select: {
+        submissions: true,
+        comments: true,
+        followers: true,
+        following: true,
       },
     },
-  });
+  },
+});
+
 
   if (!me) {
     return {
@@ -344,15 +355,18 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async (
   }));
 
   return {
-    props: {
-      username: me.username,
-      displayName: me.displayName,
-      submissions: me._count.submissions,
-      comments: me._count.comments,
-      activity,
-      recentWork,
-    },
-  };
+  props: {
+    username: me.username,
+    displayName: me.displayName,
+    submissions: me._count.submissions,
+    comments: me._count.comments,
+    followers: me._count.followers,
+    following: me._count.following,
+    activity,
+    recentWork,
+  },
+};
+
 };
 
 export default DashboardPage;
