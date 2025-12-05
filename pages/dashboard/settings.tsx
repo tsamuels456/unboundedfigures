@@ -1,6 +1,6 @@
 // pages/dashboard/settings.tsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import AvatarEditor from "@/components/AvatarEditor";
 import Link from "next/link";
@@ -11,27 +11,34 @@ type FieldErrors = {
   bio?: string;
 };
 
+type ProfileData = {
+  username: string;
+  displayName: string;
+  bio: string;
+  avatarUrl: string | null;
+};
+
 export default function DashboardSettingsPage() {
   const session = useSession();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
+  const [initialProfile, setInitialProfile] = useState<ProfileData | null>(null);
+
   const [errors, setErrors] = useState<FieldErrors>({});
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
 
   // Simple client-side validation
-  function validate(values: {
-    username: string;
-    displayName: string;
-    bio: string;
-  }): FieldErrors {
+  function validate(values: ProfileData): FieldErrors {
     const errs: FieldErrors = {};
     const uname = values.username.trim();
 
@@ -56,16 +63,43 @@ export default function DashboardSettingsPage() {
     return errs;
   }
 
+  const currentProfile: ProfileData = useMemo(
+    () => ({
+      username,
+      displayName,
+      bio,
+      avatarUrl,
+    }),
+    [username, displayName, bio, avatarUrl]
+  );
+
+  const hasChanges = useMemo(() => {
+    if (!initialProfile) return false;
+    return (
+      initialProfile.username !== currentProfile.username ||
+      initialProfile.displayName !== currentProfile.displayName ||
+      (initialProfile.bio || "") !== (currentProfile.bio || "") ||
+      (initialProfile.avatarUrl || "") !== (currentProfile.avatarUrl || "")
+    );
+  }, [initialProfile, currentProfile]);
+
   // Load profile from API
   async function loadProfile() {
     try {
       const res = await fetch("/api/profile/me");
       const data = await res.json();
       if (data.profile) {
-        setUsername(data.profile.username || "");
-        setDisplayName(data.profile.displayName || "");
-        setBio(data.profile.bio || "");
-        setAvatarUrl(data.profile.avatarUrl || null);
+        const loaded: ProfileData = {
+          username: data.profile.username || "",
+          displayName: data.profile.displayName || "",
+          bio: data.profile.bio || "",
+          avatarUrl: data.profile.avatarUrl || null,
+        };
+        setUsername(loaded.username);
+        setDisplayName(loaded.displayName);
+        setBio(loaded.bio);
+        setAvatarUrl(loaded.avatarUrl);
+        setInitialProfile(loaded);
       }
     } catch (e) {
       console.error("Failed to load profile", e);
@@ -85,6 +119,12 @@ export default function DashboardSettingsPage() {
   // Username availability checker (debounced)
   useEffect(() => {
     if (!username) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    // If username didn't change from initial, don't check
+    if (initialProfile && username === initialProfile.username) {
       setUsernameAvailable(null);
       return;
     }
@@ -112,34 +152,69 @@ export default function DashboardSettingsPage() {
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [username]);
+  }, [username, initialProfile]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const nextErrors = validate({ username, displayName, bio });
+  // Core save function
+  async function saveProfile({ silent }: { silent: boolean }) {
+    if (!initialProfile) return;
+
+    const nextErrors = validate(currentProfile);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      if (!silent) {
+        setSaveError("Please fix the highlighted fields.");
+      }
+      return;
+    }
 
     setSaving(true);
+    setSaveError(null);
+
     try {
       const res = await fetch("/api/profile/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, displayName, bio, avatarUrl }),
+        body: JSON.stringify(currentProfile),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed to update profile.");
+        const msg = data.error || "Failed to update profile.";
+        setSaveError(msg);
+        if (!silent) {
+          alert(msg);
+        }
       } else {
-        alert("Profile updated!");
+        setInitialProfile(currentProfile);
+        setLastSaved(new Date());
       }
     } catch (e) {
       console.error("Save failed", e);
-      alert("An error occurred while saving.");
+      const msg = "An error occurred while saving.";
+      setSaveError(msg);
+      if (!silent) alert(msg);
     } finally {
       setSaving(false);
     }
+  }
+
+  // Gentle auto-save: when idle and there are changes
+  useEffect(() => {
+    if (!initialProfile) return;
+    if (!hasChanges) return;
+
+    const timeout = setTimeout(() => {
+      // auto-save silently
+      saveProfile({ silent: true });
+    }, 1500);
+
+    return () => clearTimeout(timeout);
+  }, [currentProfile, hasChanges, initialProfile]);
+
+  // On manual submit
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await saveProfile({ silent: false });
   }
 
   if (!session) {
@@ -165,7 +240,8 @@ export default function DashboardSettingsPage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto p-10 space-y-10">
+    <main className="max-w-4xl mx-auto p-10 space-y-8">
+      {/* Header */}
       <header className="space-y-1">
         <h1 className="text-3xl font-serif font-bold tracking-tight">
           Profile & Settings
@@ -174,6 +250,20 @@ export default function DashboardSettingsPage() {
           Update how you appear across UnboundedFigures.
         </p>
       </header>
+
+      {/* Save status */}
+      <div className="text-xs text-gray-500 h-4">
+        {saving && <span>Saving…</span>}
+        {!saving && lastSaved && (
+          <span>Saved just now</span>
+        )}
+        {!saving && !lastSaved && !hasChanges && (
+          <span>All changes saved</span>
+        )}
+        {saveError && (
+          <span className="text-red-600 ml-2">{saveError}</span>
+        )}
+      </div>
 
       <section className="flex flex-col md:flex-row gap-8">
         {/* Avatar editor */}
@@ -198,7 +288,9 @@ export default function DashboardSettingsPage() {
                 </span>
               </div>
               <input
-                className="w-full border rounded p-2 text-sm"
+                className={`w-full border rounded p-2 text-sm ${
+                  errors.username ? "border-red-500" : ""
+                }`}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -230,7 +322,9 @@ export default function DashboardSettingsPage() {
                 Display name
               </label>
               <input
-                className="w-full border rounded p-2 text-sm"
+                className={`w-full border rounded p-2 text-sm ${
+                  errors.displayName ? "border-red-500" : ""
+                }`}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
@@ -245,7 +339,9 @@ export default function DashboardSettingsPage() {
             <div>
               <label className="block text-sm font-medium mb-1">Bio</label>
               <textarea
-                className="w-full border rounded p-2 text-sm h-32"
+                className={`w-full border rounded p-2 text-sm h-32 ${
+                  errors.bio ? "border-red-500" : ""
+                }`}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
               />
@@ -261,10 +357,10 @@ export default function DashboardSettingsPage() {
 
             <button
               type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-black text-white rounded text-sm hover:bg-gray-800 disabled:opacity-60"
+              disabled={saving || !hasChanges}
+              className="px-4 py-2 bg-black text-white rounded text-sm hover:bg-gray-800 disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save changes"}
+              {saving ? "Saving…" : hasChanges ? "Save changes" : "No changes"}
             </button>
           </form>
         </div>
