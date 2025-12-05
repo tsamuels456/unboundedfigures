@@ -29,10 +29,11 @@ const navItems = [
     href: "/dashboard/followers", // future feature
   },
   {
-    key: "settings",
-    label: "Profile & settings",
-    href: "/profile",
-  },
+  key: "settings",
+  label: "Profile & settings",
+  href: "/dashboard/settings",
+},
+
 ];
 
 export default function DashboardSidebar({ username }: DashboardSidebarProps) {

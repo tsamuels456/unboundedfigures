@@ -26,9 +26,10 @@ export default function Navbar() {
               Dashboard
             </Link>
 
-            <Link href="/profile" className="hover:underline">
-              Profile
-            </Link>
+            <Link href="/dashboard/settings" className="hover:underline">
+  Profile
+</Link>
+
 
             <button
               type="button"
