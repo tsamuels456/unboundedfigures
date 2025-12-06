@@ -5,6 +5,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { motion } from "framer-motion";
 import Avatar from "@/components/Avatar";
+import { useState } from "react";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+
 
 // ---------- Types ----------
 
@@ -33,7 +36,14 @@ type ProfileProps = {
   submissions: SubmissionCard[];
   previousUser: NeighborUser;
   nextUser: NeighborUser;
+
+  // NEW
+  followers: number;
+  following: number;
+  isOwnProfile: boolean;
+  isFollowing: boolean;
 };
+
 
 // ---------- Divider Component ----------
 
@@ -62,7 +72,47 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
   submissions,
   previousUser,
   nextUser,
+  followers,
+  following,
+  isOwnProfile,
+  isFollowing: initialIsFollowing,
 }) => {
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [followerCount, setFollowerCount] = useState(followers);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  async function handleFollowToggle() {
+    if (isOwnProfile || followLoading) return;
+
+    setFollowLoading(true);
+    try {
+      const res = await fetch("/api/follow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+
+      if (res.status === 401) {
+        // Not signed in – send to sign-in with redirect back to this profile
+        window.location.href = `/auth/signin?redirect=/u/${username}`;
+        return;
+      }
+
+      if (!res.ok) {
+        console.error("Failed to toggle follow");
+        return;
+      }
+
+      const data = await res.json();
+      setIsFollowing(data.isFollowing);
+      setFollowerCount(data.followers ?? followerCount);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
   const name = displayName || username;
   const joinedDate = new Date(joinedAt).toLocaleDateString();
 
@@ -74,46 +124,61 @@ const PublicProfilePage: NextPage<ProfileProps> = ({
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       {/* ========== HEADER / IDENTITY ========== */}
-      <section className="space-y-4 pb-6 border-b">
-        <div className="flex items-center gap-4">
-          <motion.div
-            className="rounded-full border-2 border-[var(--accent-blue)] p-1 shadow-sm"
-            whileHover={{
-              scale: 1.03,
-              boxShadow: "0 0 12px rgba(74,123,209,0.2)",
-            }}
-          >
-            <Avatar name={username} size={64} />
-          </motion.div>
+      <section className="space-y-4 border-b pb-6">
+  <div className="flex items-start justify-between gap-4">
+    <div className="space-y-1">
+      <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
+      <p className="text-sm text-gray-500">@{username}</p>
+    </div>
 
-          <div>
-            <h1 className="text-3xl font-serif font-semibold leading-tight tracking-tight text-gray-900">
-              {name}
-            </h1>
-            <p className="text-sm text-gray-500">@{username}</p>
-          </div>
-        </div>
+    {!isOwnProfile && (
+      <button
+        onClick={handleFollowToggle}
+        disabled={followLoading}
+        className={`px-4 py-1.5 rounded-full border text-sm font-medium transition ${
+          isFollowing
+            ? "bg-gray-900 text-white hover:bg-gray-800"
+            : "bg-white text-gray-900 hover:bg-gray-50"
+        }`}
+      >
+        {followLoading
+          ? isFollowing
+            ? "Unfollowing..."
+            : "Following..."
+          : isFollowing
+          ? "Following"
+          : "Follow"}
+      </button>
+    )}
+  </div>
 
-        <p className="text-sm text-gray-700 max-w-2xl leading-relaxed">
-          {bio ||
-            "This Figure has not written a bio yet — but their journey is unfolding."}
-        </p>
+  <p className="text-sm text-gray-600 max-w-2xl">
+    {bio || "No bio yet. This Figure has more to say soon."}
+  </p>
 
-        <div className="flex flex-wrap gap-8 text-xs text-gray-600">
-          <div>
-            <p className="font-semibold text-gray-700">Joined</p>
-            <p>{joinedDate}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Submissions</p>
-            <p>{stats.submissions}</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-700">Comments</p>
-            <p>{stats.comments}</p>
-          </div>
-        </div>
-      </section>
+  <div className="flex flex-wrap gap-6 text-xs text-gray-500">
+    <div>
+      <p className="font-semibold text-gray-700 text-xs">Joined</p>
+      <p>{joinedDate}</p>
+    </div>
+    <div>
+      <p className="font-semibold text-gray-700 text-xs">Submissions</p>
+      <p>{stats.submissions}</p>
+    </div>
+    <div>
+      <p className="font-semibold text-gray-700 text-xs">Comments</p>
+      <p>{stats.comments}</p>
+    </div>
+    <div>
+      <p className="font-semibold text-gray-700 text-xs">Followers</p>
+      <p>{followerCount}</p>
+    </div>
+    <div>
+      <p className="font-semibold text-gray-700 text-xs">Following</p>
+      <p>{following}</p>
+    </div>
+  </div>
+</section>
 
       {/* ========== ABOUT THIS FIGURE ========== */}
       <motion.section
@@ -347,11 +412,16 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
     return { notFound: true };
   }
 
-  const user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
     where: { username },
     include: {
       _count: {
-        select: { submissions: true, comments: true },
+        select: {
+          submissions: true,
+          comments: true,
+          followers: true,
+          following: true,
+        },
       },
       submissions: {
         where: { visibility: "PUBLIC" },
@@ -361,17 +431,42 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
           title: true,
           createdAt: true,
           category: true,
-          _count: {
-            select: { comments: true },
-          },
+          _count: { select: { comments: true } },
         },
       },
     },
   });
 
-  if (!user) {
-    return { notFound: true };
+
+    if (!user) {
+  return { notFound: true };
+}
+
+// FIXED — correct server-side client
+const supabase = createServerSupabaseClient(ctx);
+
+// Fetch current logged-in viewer
+const { data: viewerData } = await supabase.auth.getUser();
+const viewer = viewerData?.user ?? null;
+
+let isOwnProfile = false;
+let isFollowing = false;
+
+if (viewer) {
+  isOwnProfile = user.authId === viewer.id;
+
+  if (!isOwnProfile) {
+    const follow = await prisma.follow.findFirst({
+      where: {
+        followerId: viewer.id,
+        followingId: user.id,
+      },
+      select: { id: true },
+    });
+    isFollowing = !!follow;
   }
+}
+
 
   const previousUser = await prisma.user.findFirst({
     where: { createdAt: { lt: user.createdAt } },
@@ -385,7 +480,7 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
     select: { username: true, displayName: true },
   });
 
-  return {
+    return {
     props: {
       username: user.username,
       displayName: user.displayName,
@@ -396,16 +491,24 @@ export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
         comments: user._count.comments,
       },
       submissions: user.submissions.map((s) => ({
-        id: s.id,
-        title: s.title,
-        createdAt: s.createdAt.toISOString(),
-        category: s.category,
-        commentCount: s._count.comments,
-      })),
-      previousUser: previousUser || null,
-      nextUser: nextUser || null,
+    id: s.id,
+    title: s.title,
+    createdAt: s.createdAt.toISOString(),
+    category: s.category,
+    commentCount: s._count.comments,
+})),
+
+
+      previousUser,
+      nextUser,
+
+      followers: user._count.followers,
+      following: user._count.following,
+      isOwnProfile,
+      isFollowing,
     },
   };
 };
+
 
 export default PublicProfilePage;
